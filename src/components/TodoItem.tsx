@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { Todo } from '../types/Todo';
 import classNames from 'classnames';
 
@@ -17,45 +17,46 @@ export const TodoItem: React.FC<Props> = ({
   onToggle,
   onUpdate,
 }) => {
+  const { title, id, completed } = todo;
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(todo.title);
 
-  const editFieldRef = useRef<HTMLInputElement>(null);
+  useEffect(() => setIsEditing(false), [todo]);
 
-  const handleSubmit = () => {
-    if (!newTitle.trim()) {
-      onDelete(todo.id);
-    } else {
-      onUpdate({
-        ...todo,
-        title: newTitle.trim(),
-      });
-    }
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
 
-    setIsEditing(false);
-  };
+    const trimmedNewTitle = newTitle.trim();
 
-  const handlePressedKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      handleSubmit();
-    }
-
-    if (event.key === 'Escape') {
+    if (trimmedNewTitle === todo.title) {
       setIsEditing(false);
+
+      return;
     }
+
+    if (!trimmedNewTitle) {
+      onDelete(id);
+
+      return;
+    }
+
+    onUpdate({ ...todo, title: trimmedNewTitle });
   };
 
-  useEffect(() => {
-    if (isEditing && editFieldRef.current) {
-      editFieldRef.current.focus();
-    }
-  }, [isEditing]);
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+    setNewTitle(title);
+  };
+
+  const handleChangeNewTitle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTitle(event.target.value);
+  };
 
   return (
     <div
       key={todo.id}
       data-cy="Todo"
-      className={classNames('todo', { completed: todo.completed })}
+      className={classNames('todo', { completed: completed })}
     >
       {/* eslint-disable jsx-a11y/label-has-associated-control */}
       <label className="todo__status-label">
@@ -63,22 +64,28 @@ export const TodoItem: React.FC<Props> = ({
           data-cy="TodoStatus"
           type="checkbox"
           className="todo__status"
-          checked={todo.completed}
+          checked={completed}
           onChange={() => onToggle(todo)}
         />
       </label>
 
       {isEditing ? (
-        <form>
+        <form
+          onSubmit={handleSubmit}
+          onBlur={handleSubmit}
+          onKeyUp={event => {
+            if (event.key === 'Escape') {
+              setIsEditing(false);
+            }
+          }}
+        >
           <input
-            ref={editFieldRef}
+            autoFocus
             data-cy="TodoTitleField"
             type="text"
             className="todo__title-field"
             value={newTitle}
-            onChange={event => setNewTitle(event.target.value)}
-            onBlur={handleSubmit}
-            onKeyDown={handlePressedKey}
+            onChange={handleChangeNewTitle}
           />
         </form>
       ) : (
@@ -86,10 +93,7 @@ export const TodoItem: React.FC<Props> = ({
           <span
             data-cy="TodoTitle"
             className="todo__title"
-            onDoubleClick={() => {
-              setIsEditing(true);
-              setNewTitle(todo.title);
-            }}
+            onDoubleClick={handleDoubleClick}
           >
             {todo.title}
           </span>
@@ -98,7 +102,7 @@ export const TodoItem: React.FC<Props> = ({
             type="button"
             className="todo__remove"
             data-cy="TodoDelete"
-            onClick={() => onDelete(todo.id)}
+            onClick={() => onDelete(id)}
           >
             ×
           </button>

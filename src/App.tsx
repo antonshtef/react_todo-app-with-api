@@ -38,6 +38,12 @@ export const App: React.FC = () => {
       });
   }, []);
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [todos]);
+
   function getVisiebleTodos(newTodos: Todo[], newStatus: Status) {
     switch (newStatus) {
       case Status.Active:
@@ -56,7 +62,7 @@ export const App: React.FC = () => {
   const addTodo = (newTodoTitle: string) => {
     const todoTitle = query.trim();
 
-    if (!todoTitle.length) {
+    if (!todoTitle) {
       setError('Title should not be empty');
       setTimeout(() => setError(''), 3000);
 
@@ -100,7 +106,7 @@ export const App: React.FC = () => {
   const handleDeleteTodo = (todoId: number) => {
     setLoadingTodos(curr => [...curr, todoId]);
 
-    deleteTodo(todoId)
+    return deleteTodo(todoId)
       .then(() =>
         setTodos(currTodos => currTodos.filter(todo => todo.id !== todoId)),
       )
@@ -113,13 +119,11 @@ export const App: React.FC = () => {
           curr.filter(deletingTodoId => todoId !== deletingTodoId),
         ),
       );
-
-    inputRef.current?.focus();
   };
 
-  const completedTodos = todos.filter(todo => todo.completed);
-
   const deleteAllComleted = () => {
+    const completedTodos = todos.filter(todo => todo.completed);
+
     completedTodos.forEach(todo => handleDeleteTodo(todo.id));
   };
 
@@ -148,31 +152,10 @@ export const App: React.FC = () => {
     }
   };
 
-  // const handleUpdateTodo = async(updatedTodo: Todo) => {
-  //   setLoadingTodos(curr => [...curr, updatedTodo.id])
-
-  //   updateTodo(updatedTodo)
-  //     .then(() =>
-  //     setTodos(
-  //       todos.map(todo => (todo.id === updatedTodo.id ? updatedTodo : todo)),
-  //       ),
-  //     )
-  //     .catch(() => {
-  //       setError('Unable to update a todo');
-  //       throw new Error();
-  //     }
-
-  //     )
-  //     .finally(() => {
-  //       setLoadingTodos(curr => curr.filter(id => id !== updatedTodo.id))
-  //     })
-  //     // throw new Error();
-  // }
-
   const handleRenameTodo = async (todo: Todo) => {
     setLoadingTodos(curr => [...curr, todo.id]);
 
-    updateTodo(todo)
+    return updateTodo(todo)
       .then(updatedTodo =>
         setTodos(currentTodos =>
           currentTodos.map(currentTodo =>
@@ -187,6 +170,8 @@ export const App: React.FC = () => {
       .finally(() => {
         setLoadingTodos(curr => curr.filter(id => id !== todo.id));
       });
+
+    inputRef.current?.focus();
   };
 
   if (!USER_ID) {
