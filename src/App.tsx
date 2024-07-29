@@ -170,8 +170,6 @@ export const App: React.FC = () => {
       .finally(() => {
         setLoadingTodos(curr => curr.filter(id => id !== todo.id));
       });
-
-    inputRef.current?.focus();
   };
 
   if (!USER_ID) {
